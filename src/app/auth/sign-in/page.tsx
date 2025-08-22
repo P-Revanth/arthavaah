@@ -1,10 +1,54 @@
 "use client";
 
 import React from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { cn } from "@/lib/utils";
+import { auth, googleProvider } from "@/lib/firebase/client";
+import { signInWithEmailAndPassword, signInWithPopup } from "firebase/auth";
 
-// This function will be the page's default export
 export default function Form() {
+    const [email, setEmail] = useState<string>('');
+    const [password, setPassword] = useState<string>('');
+    const [error, setError] = useState<string>('');
+    const [loading, setLoading] = useState<boolean>(false);
+    const [success, setSuccess] = useState<string>('');
+    const router = useRouter();
+
+    const handleGoogleSignIn = async () => {
+        try {
+            const result = await signInWithPopup(auth, googleProvider);
+            console.log(result);
+            setError('');
+            setLoading(false);
+        } catch (error) {
+            console.log(error);
+            setError('Failed to sign in with Google.');
+            setLoading(false);
+        }
+    };
+
+    const handleEmailSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        setError('');
+        if (!email || !password) {
+            setError('Please fill out all fields.');
+            return;
+        }
+        try {
+            const result = await signInWithEmailAndPassword(auth, email, password);
+            console.log(result);
+            setEmail('');
+            setPassword('');
+            setError('');
+            setLoading(false);
+        } catch (error) {
+            console.log(error);
+            setError('Failed to sign in with email.');
+            setLoading(false);
+        }
+    };
+
     return (
         <div className='flex justify-center items-center h-screen'>
             <style>
@@ -52,15 +96,27 @@ export default function Form() {
                 <div className="absolute inset-[-50px] z-0 spin-gradient"></div>
 
                 <div className="bg-[#272727] rounded-3xl p-7 w-[399px] h-[calc(400px*1.33)] absolute z-10 backdrop-blur-md login-box-shadow">
-                    <form className="flex flex-col items-center justify-center gap-4">
+                    <form className="flex flex-col items-center justify-center gap-4" onSubmit={handleEmailSignIn}>
                         <div className="w-[85px] h-[85px] rounded-[20px] bg-gradient-to-br from-white/20 to-black/20 logo-shadow border-2 border-white flex justify-center items-center relative">
                             {/* This is a placeholder for the logo, as the original CSS used pseudo-elements */}
                         </div>
                         <span className="w-full text-center text-2xl font-bold py-1.5 text-white flex justify-center items-center">Welcome Back!</span>
-                        <input type="email" placeholder="Email" className="h-12 w-full p-2.5 border-none rounded-xl bg-[#3a3a3a] text-white outline-none text-sm focus:border-white focus:border" />
-                        <input type="password" placeholder="Password" className="h-12 w-full p-2.5 border-none rounded-xl bg-[#3a3a3a] text-white outline-none text-sm focus:border-white focus:border" />
-                        <button type="submit" className="w-full h-12 border-none rounded-xl text-sm font-semibold cursor-pointer grid place-content-center gap-2.5 bg-[#373737] text-white transition-all shadow-[inset_0px_3px_6px_-4px_rgba(255,255,255,0.6),inset_0px_-3px_6px_-2px_rgba(0,0,0,0.8)] hover:bg-white/25 hover:shadow-[inset_0px_3px_6px_rgba(255,255,255,0.6),inset_0px_-3px_6px_rgba(0,0,0,0.8),0px_0px_8px_rgba(255,255,255,0.05)] mt-1.5">Sign In</button>
-                        <button className="w-full h-12 border-none rounded-xl text-sm font-semibold cursor-pointer flex justify-center items-center gap-2.5 bg-[#373737] text-white transition-all shadow-[inset_0px_3px_6px_-4px_rgba(255,255,255,0.6),inset_0px_-3px_6px_-2px_rgba(0,0,0,0.8)] hover:bg-white/25 hover:shadow-[inset_0px_3px_6px_rgba(255,255,255,0.6),inset_0px_-3px_6px_rgba(0,0,0,0.8),0px_0px_8px_rgba(255,255,255,0.05)]">
+                        <input
+                            value={email}
+                            onChange={e => setEmail(e.target.value)}
+                            type="email"
+                            placeholder="Email"
+                            className="h-12 w-full p-2.5 border-none rounded-xl bg-[#3a3a3a] text-white outline-none text-sm focus:border-white focus:border" />
+                        <input
+                            value={password}
+                            onChange={e => setPassword(e.target.value)}
+                            type="password"
+                            placeholder="Password"
+                            className="h-12 w-full p-2.5 border-none rounded-xl bg-[#3a3a3a] text-white outline-none text-sm focus:border-white focus:border" />
+                        {error && <span className="w-full text-left text-red-400 text-sm">{error}</span>}
+                        {success && <span className="w-full text-left text-green-400 text-sm">{success}</span>}
+                        <button disabled={loading} type="submit" className="w-full h-12 border-none rounded-xl text-sm font-semibold cursor-pointer grid place-content-center gap-2.5 bg-[#373737] text-white transition-all shadow-[inset_0px_3px_6px_-4px_rgba(255,255,255,0.6),inset_0px_-3px_6px_-2px_rgba(0,0,0,0.8)] hover:bg-white/25 hover:shadow-[inset_0px_3px_6px_rgba(255,255,255,0.6),inset_0px_-3px_6px_rgba(0,0,0,0.8),0px_0px_8px_rgba(255,255,255,0.05)] mt-1.5">{loading ? 'Signing In...' : 'Sign In'}</button>
+                        <button onClick={handleGoogleSignIn} type="button" disabled={loading} className="w-full h-12 border-none rounded-xl text-sm font-semibold cursor-pointer flex justify-center items-center gap-2.5 bg-[#373737] text-white transition-all shadow-[inset_0px_3px_6px_-4px_rgba(255,255,255,0.6),inset_0px_-3px_6px_-2px_rgba(0,0,0,0.8)] hover:bg-white/25 hover:shadow-[inset_0px_3px_6px_rgba(255,255,255,0.6),inset_0px_-3px_6px_rgba(0,0,0,0.8),0px_0px_8px_rgba(255,255,255,0.05)]">
                             <svg className="h-4" viewBox="-3 0 262 262" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid" fill="#000000">
                                 <g id="SVGRepo_bgCarrier" strokeWidth="0" />
                                 <g id="SVGRepo_tracerCarrier" strokeLinecap="round" strokeLinejoin="round" />
@@ -71,7 +127,7 @@ export default function Form() {
                                     <path d="M130.55 50.479c24.514 0 41.05 10.589 50.479 19.438l36.844-35.974C195.245 12.91 165.798 0 130.55 0 79.49 0 35.393 29.301 13.925 71.947l42.211 32.783c10.59-31.477 39.891-54.251 74.414-54.251" fill="#EB4335" />
                                 </g>
                             </svg>
-                            <span> Sign in with Google </span>
+                            <span>{loading ? 'Signing In...' : 'Sign in with Google'}</span>
                         </button>
                         <p className="w-full text-left text-white/50 text-md">
                             Don't have an account?
